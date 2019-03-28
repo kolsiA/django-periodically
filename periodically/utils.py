@@ -1,6 +1,6 @@
 from django.utils import importlib, timezone
 from . import settings
-from .models import ExecutionRecord
+
 
 
 class InvalidBackendAliasError(Exception):
@@ -14,6 +14,7 @@ class InvalidBackendError(Exception):
 
 
 def get_scheduled_time(task, schedule, now=None):
+    from .models import ExecutionRecord
     previous_record = ExecutionRecord.objects.get_most_recent(task, schedule)
     if not now:
         now = timezone.now()
