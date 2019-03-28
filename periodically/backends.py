@@ -1,5 +1,4 @@
 from __future__ import print_function
-from .models import ExecutionRecord
 from django.utils import timezone
 from .signals import task_complete
 from .utils import get_scheduled_time
@@ -65,6 +64,7 @@ class BaseBackend(object):
         self._run_tasks(tasks, fake, True)
 
     def _run_tasks(self, tasks=None, fake=None, force=False):
+        from .models import ExecutionRecord
         now = timezone.now()
 
         # Verify that the provided tasks actually exist.
@@ -76,12 +76,12 @@ class BaseBackend(object):
 
         registered_task_ids = [task.task_id for task in tasks]
 
-        # Cancel the task if it's timed out.
-        # FIXME: This should only be called once per task (no matter how many times it's scheduled).
-        self.check_timeouts(now)
-
         for task, schedule in self._schedules:
             if not tasks or task.task_id in registered_task_ids:
+
+                # Cancel the task if it's timed out.
+                # FIXME: This should only be called once per task (no matter how many times it's scheduled).
+                self.check_timeout(task, now)
 
                 # If there are still tasks running, don't run the queue (as we
                 # could mess up the order).
@@ -106,6 +106,7 @@ class BaseBackend(object):
                         self.run_task(task, schedule, scheduled_time, now)
 
     def check_timeout(self, task, now=None):
+        from .models import ExecutionRecord
         from .settings import DEFAULT_TIMEOUT
 
         if now is None:
@@ -131,6 +132,7 @@ class BaseBackend(object):
             self.check_timeout(task, now)
 
     def fake_task(self, task, schedule, scheduled_time=None, now=None):
+        from .models import ExecutionRecord
         # TODO: Do we need both of these?
         print('Faking periodic task "%s"' % task.task_id)
         self.logger.info('Faking periodic task "%s"' % task.task_id)
@@ -159,6 +161,7 @@ class BaseBackend(object):
 
         """
         # TODO: Do we need both of these?
+        from .models import ExecutionRecord
         print('Running periodic task "%s"' % task.task_id)
         self.logger.info('Running periodic task "%s"' % task.task_id)
 
@@ -212,6 +215,7 @@ class BaseBackend(object):
         <code>Logger.log()</code> as keyword args.
 
         """
+        from .models import ExecutionRecord
         if extra is not None:
             self.logger.log(**extra)
 
